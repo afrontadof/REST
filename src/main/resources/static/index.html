@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Libros</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    form { display: grid; gap: .5rem; margin-bottom: 1rem; }
+    input, button { padding: .5rem; font-size: 1rem; }
+    button { cursor: pointer; }
+    .fila { display: flex; gap: .5rem; }
+    .fila button { flex: 1; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: .4rem; text-align: left; }
+    th { background: #f0f0f0; }
+    #mensaje { margin-top: .5rem; min-height: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Catálogo de libros</h1>
+
+  <form id="formulario">
+    <input id="titulo" placeholder="Título" required>
+    <input id="autor" placeholder="Autor" required>
+    <input id="anio" type="number" placeholder="Año" required>
+    <input id="precio" type="number" step="0.01" placeholder="Precio" required>
+    <div class="fila">
+      <button type="submit">Agregar libro</button>
+      <button type="button" id="btnListar">Listar libros</button>
+    </div>
+  </form>
+
+  <div id="mensaje"></div>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Título</th><th>Autor</th><th>Año</th><th>Precio</th></tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+
+  <script>
+    const API = '/api/libros';
+    const mensaje = document.getElementById('mensaje');
+    const tabla = document.getElementById('tabla');
+
+    async function listar() {
+      try {
+        const resp = await fetch(API);
+        const libros = await resp.json();
+        tabla.innerHTML = '';
+        libros.forEach(l => {
+          const tr = document.createElement('tr');
+          [l.id, l.titulo, l.autor, l.anio, l.precio].forEach(valor => {
+            const td = document.createElement('td');
+            td.textContent = valor;
+            tr.appendChild(td);
+          });
+          tabla.appendChild(tr);
+        });
+        mensaje.textContent = 'Libros: ' + libros.length + ' libro(s)';
+      } catch (e) {
+        mensaje.textContent = 'Error al listar: ' + e.message;
+      }
+    }
+
+    document.getElementById('formulario').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const libro = {
+        titulo: document.getElementById('titulo').value,
+        autor: document.getElementById('autor').value,
+        anio: parseInt(document.getElementById('anio').value),
+        precio: parseFloat(document.getElementById('precio').value)
+      };
+      try {
+        const resp = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(libro)
+        });
+        const creado = await resp.json();
+        mensaje.textContent = 'Libro creado con id ' + creado.id;
+        e.target.reset(); 
+      } catch (e) {
+        mensaje.textContent = 'Error al crear: ' + e.message;
+      }
+    });
+
+    document.getElementById('btnListar').addEventListener('click', listar);
+    listar();
+  </script>
+</body>
+</html>
